@@ -156,6 +156,7 @@ class GenParticleObj:
         self.name = ''
         self.vect = TLorentzVector()
         self.vect.SetPtEtaPhiM(genpart.pt,genpart.eta,genpart.phi,genpart.mass)
+        #self.vect.SetPt(genpart.pt); self.vect.SetEta(genpart.eta); self.vect.SetPhi(genpart.phi); self.vect.SetM(genpart.mass)
         self.pt = self.vect.Perp()
         self.eta = self.vect.Eta()
         self.phi = self.vect.Phi()

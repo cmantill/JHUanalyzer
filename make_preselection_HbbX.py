@@ -5,7 +5,6 @@
 #################################################################
 
 import ROOT
-from ROOT import *
 
 from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection,Object,Event
 from PhysicsTools.NanoAODTools.postprocessing.framework.treeReaderArrayTools import InputTree
@@ -18,11 +17,13 @@ from optparse import OptionParser
 import copy
 import math
 from math import sqrt
+import os
 import sys
 import time
+import array
+from array import array
 
 import Presel_Functions
-from Presel_Functions import *
 
 if __name__ == "__main__":
     
@@ -144,10 +145,10 @@ if __name__ == "__main__":
     #################################
     # Load cut values and constants #
     #################################
-    Cons = LoadConstants(options.year)
+    Cons = Presel_Functions.LoadConstants(options.year)
     lumi = Cons['lumi']
 
-    Cuts = LoadCuts(options.region,options.year)
+    Cuts = Presel_Functions.LoadCuts(options.region,options.year)
 
     #################################
     # Load N2ddt distribution
@@ -206,21 +207,21 @@ if __name__ == "__main__":
         else: 
             effFile = 'trigger/RUNTriggerEfficiencies_SingleMuon_Run2016_V2p1_v03.root'
         print "Using triggerEff file = ",effFile
-        TrigFile = TFile.Open(effFile,"read")
+        TrigFile = ROOT.TFile.Open(effFile,"read")
         if options.year=='17' or options.year=='18':
             trig_denom = TrigFile.Get("h_denom"); trig_denom.SetDirectory(0)
             trig_numer = TrigFile.Get("h_numer"); trig_numer.SetDirectory(0)
         if options.year=='16':
             trig_denom = TrigFile.Get("DijetTriggerEfficiencySeveralTriggers/jet1SoftDropMassjet1PtDenom_cutJet"); trig_denom.SetDirectory(0); trig_denom.RebinX(2); trig_denom.RebinY(5);
             trig_numer = TrigFile.Get("DijetTriggerEfficiencySeveralTriggers/jet1SoftDropMassjet1PtPassing_cutJet"); trig_numer.SetDirectory(0); trig_numer.RebinX(2); trig_numer.RebinY(5);
-        TrigPlot = TEfficiency()
-        if (TEfficiency.CheckConsistency(trig_numer, trig_denom)):
-            TrigPlot = TEfficiency(trig_numer, trig_denom)
+        TrigPlot = ROOT.TEfficiency()
+        if (ROOT.TEfficiency.CheckConsistency(trig_numer, trig_denom)):
+            TrigPlot = ROOT.TEfficiency(trig_numer, trig_denom)
             TrigPlot.SetDirectory(0)
         TrigFile.Close()
 
         # NLO k-factors
-        f_kfactors = TFile.Open("weights/kfactors.root","read")
+        f_kfactors = ROOT.TFile.Open("weights/kfactors.root","read")
         hQCD_Z = f_kfactors.Get('ZJets_012j_NLO/nominal').Clone('QCD_Z')
         hQCD_W = f_kfactors.Get('WJets_012j_NLO/nominal').Clone('QCD_W')
         hLO_Z = f_kfactors.Get('ZJets_LO/inv_pt').Clone('LO_Z')
@@ -286,9 +287,9 @@ if __name__ == "__main__":
     # Make new file for storage #
     #############################
     if jobs!=1:
-        f = TFile( "Hbbpreselection"+options.year+"_"+options.set+"_job"+options.job+"of"+options.njobs+mod+'_'+doubleB_short+'_'+options.region+".root", "recreate" )
+        f = ROOT.TFile( "Hbbpreselection"+options.year+"_"+options.set+"_job"+options.job+"of"+options.njobs+mod+'_'+doubleB_short+'_'+options.region+".root", "recreate" )
     else:
-        f = TFile( "Hbbpreselection"+options.year+"_"+options.set+mod+'_'+doubleB_short+'_'+options.region+".root", "recreate" )
+        f = ROOT.TFile( "Hbbpreselection"+options.year+"_"+options.set+mod+'_'+doubleB_short+'_'+options.region+".root", "recreate" )
     f.cd()
 
     ###################
@@ -298,7 +299,7 @@ if __name__ == "__main__":
         hname = names[options.set.replace('ext','')]
     else:
         hname = 'data_obs'
-    Hbb_cutflow = TH1D('%s_cutflow'%hname, 'Hbb_cutflow', 12, 0.5, 12.5)
+    Hbb_cutflow = ROOT.TH1D('%s_cutflow'%hname, 'Hbb_cutflow', 12, 0.5, 12.5)
     Hbb_cutflow.GetXaxis().SetBinLabel(1, "no cuts")
     Hbb_cutflow.GetXaxis().SetBinLabel(2, "p_{T}")
     Hbb_cutflow.GetXaxis().SetBinLabel(3, "rho")
@@ -312,45 +313,45 @@ if __name__ == "__main__":
     Hbb_cutflow.GetXaxis().SetBinLabel(11, "M - "+doubleB_title)
     Hbb_cutflow.GetXaxis().SetBinLabel(12, "T - "+doubleB_title)
 
-    N2_map = TH3F('%s_n2ddt_map'%hname,'%s_n2ddt_map'%hname,
+    N2_map = ROOT.TH3F('%s_n2ddt_map'%hname,'%s_n2ddt_map'%hname,
                   30, -6, -1.5,
                   100, 400, 1200,
                   200, 0, 0.5)
     N2_map.Sumw2()
-    Hbb_doubleB = TH1F('%s_doubleB'%hname,''+doubleB_title+' tag',60,0,1)
+    Hbb_doubleB = ROOT.TH1F('%s_doubleB'%hname,''+doubleB_title+' tag',60,0,1)
     Hbb_doubleB.Sumw2()
-    Hbb_deepAK8 = TH1F('%s_deepAK8'%hname,'deepAK8', 60,0,1)
+    Hbb_deepAK8 = ROOT.TH1F('%s_deepAK8'%hname,'deepAK8', 60,0,1)
     Hbb_deepAK8.Sumw2()
-    Hbb_pT = TH1F('%s_pT'%hname,'hbb pT',400,200,1000)
+    Hbb_pT = ROOT.TH1F('%s_pT'%hname,'hbb pT',400,200,1000)
     Hbb_pT.Sumw2()
-    Hbb_pT_450 = TH1F('%s_pT_450'%hname,'hbb pT 450',100,400,1000)
+    Hbb_pT_450 = ROOT.TH1F('%s_pT_450'%hname,'hbb pT 450',100,400,1000)
     Hbb_pT_450.Sumw2()
-    Hbb_mSD = TH1F('%s_mSD'%hname,'hbb mSD',60,40,220)
+    Hbb_mSD = ROOT.TH1F('%s_mSD'%hname,'hbb mSD',60,40,220)
     Hbb_mSD.Sumw2()
-    Hbb_mSD_450 = TH1F('%s_mSD_450'%hname,'hbb mSD 450',60,40,220)
+    Hbb_mSD_450 = ROOT.TH1F('%s_mSD_450'%hname,'hbb mSD 450',60,40,220)
     Hbb_mSD_450.Sumw2()
-    Hbb_mSD_uncorr =  TH1F('%s_mSD_uncorr'%hname,'hbb mSD uncorr',60,40,220)
+    Hbb_mSD_uncorr =  ROOT.TH1F('%s_mSD_uncorr'%hname,'hbb mSD uncorr',60,40,220)
     Hbb_mSD.Sumw2()
-    Hbb_eta = TH1F('%s_eta'%hname,'hbb eta',60,-3,3)
+    Hbb_eta = ROOT.TH1F('%s_eta'%hname,'hbb eta',60,-3,3)
     Hbb_eta.Sumw2()
-    Hbb_rho = TH1F('%s_rho'%hname,'hbb rho',60,-7,-1)
+    Hbb_rho = ROOT.TH1F('%s_rho'%hname,'hbb rho',60,-7,-1)
     Hbb_rho.Sumw2()
-    Hbb_n2ddt = TH1F('%s_n2ddt'%hname,'hbb n2ddt',60,-0.5,0.5)
+    Hbb_n2ddt = ROOT.TH1F('%s_n2ddt'%hname,'hbb n2ddt',60,-0.5,0.5)
     Hbb_n2ddt.Sumw2()
-    Hbb_n2ddt_new = TH1F('%s_n2ddt_new'%hname,'hbb n2ddt new',60,-0.5,0.5)
+    Hbb_n2ddt_new = ROOT.TH1F('%s_n2ddt_new'%hname,'hbb n2ddt new',60,-0.5,0.5)
     Hbb_n2ddt_new.Sumw2()
-    Hbb_n2 = TH1F('%s_n2'%hname,'hbb n2',60,0.,0.8)
+    Hbb_n2 = ROOT.TH1F('%s_n2'%hname,'hbb n2',60,0.,0.8)
     Hbb_n2.Sumw2()
-    Hbb_tau21ddt = TH1F('%s_tau21ddt'%hname,'hbb tau21ddt',60,0,1.2)
+    Hbb_tau21ddt = ROOT.TH1F('%s_tau21ddt'%hname,'hbb tau21ddt',60,0,1.2)
     Hbb_tau21ddt.Sumw2()
-    Hbb_tau21 = TH1F('%s_tau21'%hname,'hbb tau21',60,0,1)
+    Hbb_tau21 = ROOT.TH1F('%s_tau21'%hname,'hbb tau21',60,0,1)
     Hbb_tau21.Sumw2()
-    MET = TH1F('%s_MET'%hname,'MET',60,0,500)
+    MET = ROOT.TH1F('%s_MET'%hname,'MET',60,0,500)
     MET.Sumw2()
-    ttbarvar = TH1F('%s_ttbarvar'%hname,'Max Opp. Hem. AK4 DeepCSV b',60,0,1)
+    ttbarvar = ROOT.TH1F('%s_ttbarvar'%hname,'Max Opp. Hem. AK4 DeepCSV b',60,0,1)
     ttbarvar.Sumw2()
 
-    nev = TH1F("nev",   "nev",      1, 0, 1 )
+    nev = ROOT.TH1F("nev",   "nev",      1, 0, 1 )
 
     Mass_binBoundaries = []
     for i0 in range(0, 24):
@@ -371,7 +372,7 @@ if __name__ == "__main__":
             if options.JER != 'nominal': 
                 histname += '_JER%s'%options.JER.capitalize()
                 histtitle += '_JER%s'%options.JER.capitalize()
-            hists[wp][cat] = TH2F(histname, histtitle, len(Mass_binBoundaries)-1, array('d', Mass_binBoundaries), len(Pt_binBoundaries)-1, array('d', Pt_binBoundaries) )
+            hists[wp][cat] = ROOT.TH2F(histname, histtitle, len(Mass_binBoundaries)-1, array('d', Mass_binBoundaries), len(Pt_binBoundaries)-1, array('d', Pt_binBoundaries) )
 
     if runOthers == True:
         if not isData:
@@ -380,15 +381,15 @@ if __name__ == "__main__":
             for wp in WPs:
                 for sys in systs:
                     for cat in passfail:
-                        hists[wp]['%s_%s'%(cat,sys)] = TH2F("%s_%s%s_%s"%(hname,wp,cat,sys), "mass of Hbb vs pT - %s %s %s"%(cat,sys,wp), len(Mass_binBoundaries)-1, array('d', Mass_binBoundaries), len(Pt_binBoundaries)-1, array('d', Pt_binBoundaries) )
+                        hists[wp]['%s_%s'%(cat,sys)] = ROOT.TH2F("%s_%s%s_%s"%(hname,wp,cat,sys), "mass of Hbb vs pT - %s %s %s"%(cat,sys,wp), len(Mass_binBoundaries)-1, array('d', Mass_binBoundaries), len(Pt_binBoundaries)-1, array('d', Pt_binBoundaries) )
                         hists[wp]['%s_%s'%(cat,sys)].Sumw2()  
 
     print("Histograms booked")
     ###############################
     # Grab root file that we want #
     ###############################
-    file_string = Load_jetNano(options.set,options.year)
-    file = TFile.Open(file_string)
+    file_string = Presel_Functions.Load_jetNano(options.set,options.year)
+    file = ROOT.TFile.Open(file_string)
     print("root file"+file_string+" loaded")
 
     ################################
@@ -528,7 +529,7 @@ if __name__ == "__main__":
 
         # mass selection
         #Hbbmsd = ak8JetsColl[0].msoftdrop_nom
-        Hbbmsd = CorrectMSD(ak8JetsColl[0],ak8subJetsColl,puppisd_corrGEN,puppisd_corrRECO_cen,puppisd_corrRECO_for)
+        Hbbmsd = Presel_Functions.CorrectMSD(ak8JetsColl[0],ak8subJetsColl,puppisd_corrGEN,puppisd_corrRECO_cen,puppisd_corrRECO_for)
         if Hbbmsd < 20: continue
         Hbbsel['msd'] = Hbbmsd > 40
 
@@ -538,7 +539,7 @@ if __name__ == "__main__":
         # preselection that is not inmediately applied
         # rho selection
         if ak8JetsColl[0].pt_nom >= 200:
-            Hbbrho = 2*log(Hbbmsd/ak8JetsColl[0].pt_nom)
+            Hbbrho = 2*math.log(Hbbmsd/ak8JetsColl[0].pt_nom)
             Hbbsel['rho'] = -6 < Hbbrho < -2.1
         else:
             Hbbrho = -1
@@ -546,7 +547,7 @@ if __name__ == "__main__":
 
         # check ttbar veto based on topology of ak4 jets
         # no medium DeepCSV b-tagged jet in the opposite hemisphere of the AK8 jet among the four leading-pT AK4 jets
-        candidateAK4s = Hemispherize(ak8JetsColl,ak4JetsColl) # get opposite hemisphere ak4 jets
+        candidateAK4s = Presel_Functions.Hemispherize(ak8JetsColl,ak4JetsColl) # get opposite hemisphere ak4 jets
         Hbbsel['TTbarCut'] = True
         maxdeepcsv = 0
         if len(candidateAK4s)>0:
@@ -555,16 +556,16 @@ if __name__ == "__main__":
                     maxdeepcsv = candidateAK4s[i].btagDeepB
             #if Cuts['deepbtag'][0] < maxdeepcsv < Cuts['deepbtag'][1]: # check if any of the leading 4 with deepbtag within that range
             #0.2219 0.6324 0.8958
-            if 0.2219 < maxdeepcsv < 1:  #tight?
-            #if 0.6324 < maxdeepcsv < 1: #medium
+            #if 0.2219 < maxdeepcsv < 1:  #tight?
+            if 0.6324 < maxdeepcsv < 1: #medium
                 Hbbsel['TTbarCut'] = False
 
         # MET cut
         Hbbsel['MET'] = inTree.readBranch('MET_pt') < 140
 
         # N2ddt cut
-        n2ddt = getN2dtt(trans_h2ddt,ak8JetsColl[0].n2b1,Hbbrho,Hbbpt)
-        n2ddt_new = getN2dtt(trans_h2ddt_new,ak8JetsColl[0].n2b1,Hbbrho,Hbbpt)
+        n2ddt = Presel_Functions.getN2dtt(trans_h2ddt,ak8JetsColl[0].n2b1,Hbbrho,Hbbpt)
+        n2ddt_new = Presel_Functions.getN2dtt(trans_h2ddt_new,ak8JetsColl[0].n2b1,Hbbrho,Hbbpt)
         Hbbsel['n2ddt'] = n2ddt < 0
         Hbbsel['n2ddt_new'] = n2ddt_new < 0
 
@@ -575,17 +576,24 @@ if __name__ == "__main__":
         tau21ddt = tau21 + 0.080*math.log((Hbbmsd**2)/Hbbpt)
         Hbbsel['tau21ddt'] = tau21ddt < Cuts['tau21ddt'][1]
 
-        jet0 = TLorentzVector(); jet0.SetPtEtaPhiM(ak8JetsColl[0].pt_nom, ak8JetsColl[0].eta, ak8JetsColl[0].phi, Hbbmsd)
+        jet0 = ROOT.TLorentzVector();
+        jet0.SetPtEtaPhiM(ak8JetsColl[0].pt_nom, ak8JetsColl[0].eta,ak8JetsColl[0].phi, Hbbmsd)
+        #jet0.SetPt(ak8JetsColl[0].pt_nom)
+        #jet0.SetEta(ak8JetsColl[0].eta)
+        #jet0.SetPhi(ak8JetsColl[0].phi)
+        #jet0.SetM(Hbbmsd)
 
         # match jet
         Hbbsel['unmatched'] = False
         Hbbsel['semimatched'] = False
         Hbbsel['matched'] = False
+        vid=0
+        genVPt = 0
         if not isData:
             if 'zqq' in names[options.set.replace('ext','')]: vid = 23
             if 'wqq' in names[options.set.replace('ext','')]: vid = 24
             if 'tqq' in names[options.set.replace('ext','')]:
-                matched = TopJetMatching(jet0, GenParticles)
+                matched = Presel_Functions.TopJetMatching(jet0, GenParticles)
                 genVPt = 0
                 if matched==3:
                     Hbbsel['matched'] = True
@@ -594,11 +602,12 @@ if __name__ == "__main__":
                 else:
                     Hbbsel['unmatched'] = True
             else:
-                matched,genVPt = VJetMatching(jet0,GenParticles,vid)
-                if matched:
-                    Hbbsel['matched'] = True
-                else:
-                    Hbbsel['unmatched'] = True
+                if vid>0:
+                    matched,genVPt = Presel_Functions.VJetMatching(jet0,GenParticles,vid)
+                    if matched:
+                        Hbbsel['matched'] = True
+                    else:
+                        Hbbsel['unmatched'] = True
 
             '''
             dphi = 9999; dpt= 9999; dmass = 9999;
@@ -613,6 +622,7 @@ if __name__ == "__main__":
             '''
 
         # bb selection
+        Hbbsel['DoubleB_02'] = (getattr(ak8JetsColl[0],doubleB_name) > 0.2)
         Hbbsel['DoubleB_lead_tight'] = (Cuts['doublebtagTight'][0] < getattr(ak8JetsColl[0],doubleB_name) < Cuts['doublebtagTight'][1])
         Hbbsel['DoubleB_lead_medium'] = (Cuts['doublebtag'][0] < getattr(ak8JetsColl[0],doubleB_name) < Cuts['doublebtag'][1])
         Hbbsel['DoubleB_lead_loose'] = (Cuts['doublebtagLoose'][0] < getattr(ak8JetsColl[0],doubleB_name) < Cuts['doublebtagLoose'][1])
@@ -628,8 +638,7 @@ if __name__ == "__main__":
         Hbbsel['fail_L'] = not Hbbsel['DoubleB_lead_loose']
 
         # define preselection
-        #preselection = Hbbsel['pT'] and Hbbsel['msd'] and Hbbsel['rho'] and Hbbsel['jetIds'] and not Hbbsel['leptonExists'] and Hbbsel['TTbarCut'] and Hbbsel['MET'] and Hbbsel['tau21ddt'] 
-        preselection = Hbbsel['pT'] and Hbbsel['msd'] and Hbbsel['rho'] and Hbbsel['jetIds'] and not Hbbsel['leptonExists'] and Hbbsel['TTbarCut'] and Hbbsel['MET'] and Hbbsel['n2ddt_new'] 
+        preselection = Hbbsel['pT'] and Hbbsel['msd'] and Hbbsel['rho'] and Hbbsel['jetIds'] and not Hbbsel['leptonExists'] and Hbbsel['TTbarCut'] and Hbbsel['MET']  and Hbbsel['DoubleB_02']
         if not isData:
             Hbb_cutflow.Fill(1)
             if Hbbsel['pT']:
@@ -642,18 +651,20 @@ if __name__ == "__main__":
                             Hbb_cutflow.Fill(5)
                             if Hbbsel['MET']:
                                 Hbb_cutflow.Fill(6)
-                                if Hbbsel['n2ddt']: # this is not applied
+                                #if Hbbsel['n2ddt']: # this is not applied
+                                #    Hbb_cutflow.Fill(7)
+                                #if Hbbsel['tau21ddt']: # this goes in the middle
+                                #    Hbb_cutflow.Fill(9)
+                                #if Hbbsel['n2ddt_new']: # this is not applied                                                                                                     
+                                #    Hbb_cutflow.Fill(8)
+                                if Hbbsel['DoubleB_02']:
                                     Hbb_cutflow.Fill(7)
-                                if Hbbsel['tau21ddt']: # this goes in the middle
-                                    Hbb_cutflow.Fill(9)
-                                if Hbbsel['n2ddt_new']: # this is not applied                                                                                                     
-                                    Hbb_cutflow.Fill(8)
                                     if Hbbsel['pass_L']: # this is for loose W/Z templates
-                                        Hbb_cutflow.Fill(10)
+                                        Hbb_cutflow.Fill(8)
                                         if Hbbsel['pass_M']:
-                                            Hbb_cutflow.Fill(11) # this is the current working point
+                                            Hbb_cutflow.Fill(9) # this is the current working point
                                             if Hbbsel['pass_T']:
-                                                Hbb_cutflow.Fill(12)
+                                                Hbb_cutflow.Fill(10)
         
         #########################################
         # Weights
@@ -672,39 +683,44 @@ if __name__ == "__main__":
             # Trigger weight
             massForTrig = min(max(Hbbmsd,0), 300.)
             ptForTrig = max(200., min(ak8JetsColl[0].pt_nom, 1000.))
-            weights['trigger']['nom'] = Trigger_Lookup( massForTrig, ptForTrig, TrigPlot )[0]
-            weights['trigger']['up'] = Trigger_Lookup( massForTrig, ptForTrig, TrigPlot )[1]
-            weights['trigger']['down'] = Trigger_Lookup( massForTrig, ptForTrig, TrigPlot )[2]
+            weights['trigger']['nom'] = Presel_Functions.Trigger_Lookup( massForTrig, ptForTrig, TrigPlot )[0]
+            weights['trigger']['up'] = Presel_Functions.Trigger_Lookup( massForTrig, ptForTrig, TrigPlot )[1]
+            weights['trigger']['down'] = Presel_Functions.Trigger_Lookup( massForTrig, ptForTrig, TrigPlot )[2]
 
             # k-factor weight
-            weights['kFactor']['nom'] = kFactor_Lookup( genVPt, histsk, names[options.set.replace('ext','')]+'_'+options.year )[0]
-            weights['kFactor']['up'] = weights['kFactor']['nom']
-            weights['kFactor']['down'] = weights['kFactor']['nom']
+            if 'wqq' in names[options.set.replace('ext','')] or 'zqq' in names[options.set.replace('ext','')]:
+                weights['kFactor']['nom'] = Presel_Functions.kFactor_Lookup( genVPt, histsk, names[options.set.replace('ext','')]+'_'+options.year )[0]
+                weights['kFactor']['up'] = weights['kFactor']['nom']
+                weights['kFactor']['down'] = weights['kFactor']['nom']
+            else:
+                weights['kFactor']['nom'] = 1
+                weights['kFactor']['up'] = 1
+                weights['kFactor']['down'] = 1
 
         #########################################
         # Fill control histograms #
         #########################################
         if not isData:
             if Hbbmsd > 20 and ak8JetsColl[0].pt_nom > 200 and not Hbbsel['leptonExists']:
-                N2_map.Fill(2*log(Hbbmsd/ak8JetsColl[0].pt_nom),ak8JetsColl[0].pt_nom,ak8JetsColl[0].n2b1,norm_weight*Weightify(weights,'nominal'))
+                N2_map.Fill(2*math.log(Hbbmsd/ak8JetsColl[0].pt_nom),ak8JetsColl[0].pt_nom,ak8JetsColl[0].n2b1,norm_weight*Presel_Functions.Weightify(weights,'nominal'))
         if preselection:
-            Hbb_rho.Fill(Hbbrho,norm_weight*Weightify(weights,'nominal'))
-            Hbb_pT.Fill(jet0.Pt(),norm_weight*Weightify(weights,'nominal'))
-            Hbb_mSD_uncorr.Fill(ak8JetsColl[0].msoftdrop,norm_weight*Weightify(weights,'nominal'))
-            Hbb_mSD.Fill(jet0.M(),norm_weight*Weightify(weights,'nominal'))
-            Hbb_eta.Fill(jet0.Eta(),norm_weight*Weightify(weights,'nominal'))
-            MET.Fill(inTree.readBranch('MET_pt'),norm_weight*Weightify(weights,'nominal'))
-            ttbarvar.Fill(maxdeepcsv,norm_weight*Weightify(weights,'nominal'))
-            Hbb_doubleB.Fill(getattr(ak8JetsColl[0],doubleB_name),norm_weight*Weightify(weights,'nominal'))
-            Hbb_deepAK8.Fill(getattr(ak8JetsColl[0],'deepTagMD_ZHbbvsQCD'),norm_weight*Weightify(weights,'nominal'))
-            Hbb_n2.Fill(ak8JetsColl[0].n2b1,norm_weight*Weightify(weights,'nominal'))
-            Hbb_n2ddt.Fill(n2ddt,norm_weight*Weightify(weights,'nominal'))
-            Hbb_n2ddt_new.Fill(n2ddt_new,norm_weight*Weightify(weights,'nominal'))
-            Hbb_tau21.Fill(tau21,norm_weight*Weightify(weights,'nominal'))
-            Hbb_tau21ddt.Fill(tau21ddt,norm_weight*Weightify(weights,'nominal'))
+            Hbb_rho.Fill(Hbbrho,norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+            Hbb_pT.Fill(jet0.Pt(),norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+            Hbb_mSD_uncorr.Fill(ak8JetsColl[0].msoftdrop,norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+            Hbb_mSD.Fill(jet0.M(),norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+            Hbb_eta.Fill(jet0.Eta(),norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+            MET.Fill(inTree.readBranch('MET_pt'),norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+            ttbarvar.Fill(maxdeepcsv,norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+            Hbb_doubleB.Fill(getattr(ak8JetsColl[0],doubleB_name),norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+            Hbb_deepAK8.Fill(getattr(ak8JetsColl[0],'deepTagMD_ZHbbvsQCD'),norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+            Hbb_n2.Fill(ak8JetsColl[0].n2b1,norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+            Hbb_n2ddt.Fill(n2ddt,norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+            Hbb_n2ddt_new.Fill(n2ddt_new,norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+            Hbb_tau21.Fill(tau21,norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+            Hbb_tau21ddt.Fill(tau21ddt,norm_weight*Presel_Functions.Weightify(weights,'nominal'))
             if ak8JetsColl[0].pt_nom > 450:
-                Hbb_pT_450.Fill(jet0.Pt(),norm_weight*Weightify(weights,'nominal'))
-                Hbb_mSD_450.Fill(jet0.M(),norm_weight*Weightify(weights,'nominal'))
+                Hbb_pT_450.Fill(jet0.Pt(),norm_weight*Presel_Functions.Weightify(weights,'nominal'))
+                Hbb_mSD_450.Fill(jet0.M(),norm_weight*Presel_Functions.Weightify(weights,'nominal'))
 
         ######################################### 
         # Check preselection #
@@ -713,7 +729,7 @@ if __name__ == "__main__":
             for wp in WPs:
                 for cat in ['pass','fail']:
                     if Hbbsel['%s_%s'%(cat,wp)]:
-                        hists[wp][cat].Fill(jet0.M(),jet0.Pt(),norm_weight*Weightify(weights,'nominal'))
+                        hists[wp][cat].Fill(jet0.M(),jet0.Pt(),norm_weight*Presel_Functions.Weightify(weights,'nominal'))
 
             # Fill variations
             if runOthers and not isData:
@@ -723,12 +739,12 @@ if __name__ == "__main__":
                             if Hbbsel['%s_%s'%(cat,wp)] and Hbbsel[sys]:
                                 mass_corr = jet0.M()
                                 if sys=='matched': mass_corr = jet0.M()*Cons['shift_SF']
-                                hists[wp]['%s_%s'%(cat,sys)].Fill(mass_corr,jet0.Pt(),norm_weight*Weightify(weights,'nominal'))
+                                hists[wp]['%s_%s'%(cat,sys)].Fill(mass_corr,jet0.Pt(),norm_weight*Presel_Functions.Weightify(weights,'nominal'))
                             
                         for sys in ['Pu','trigger']:
                             if Hbbsel['%s_%s'%(cat,wp)]:
-                                hists[wp]['%s_%sUp'%(cat,sys)].Fill(jet0.M(),jet0.Pt(),norm_weight*Weightify(weights,'%s_up'%sys))
-                                hists[wp]['%s_%sDown'%(cat,sys)].Fill(jet0.M(),jet0.Pt(),norm_weight*Weightify(weights,'%s_down'%sys))
+                                hists[wp]['%s_%sUp'%(cat,sys)].Fill(jet0.M(),jet0.Pt(),norm_weight*Presel_Functions.Weightify(weights,'%s_up'%sys))
+                                hists[wp]['%s_%sDown'%(cat,sys)].Fill(jet0.M(),jet0.Pt(),norm_weight*Presel_Functions.Weightify(weights,'%s_down'%sys))
 
     end = time.time()
     print '\n'
